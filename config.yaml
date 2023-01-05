@@ -1,0 +1,23 @@
+websites:
+  thiessen.com.mx:
+    url: https://thiessen.com.mx
+    search_path: /properties-search/page/PAGE_NUMBER/
+    queries:
+      listing_type:
+        - bodega
+        - shop
+        - office
+        - otro
+        - single-family
+        - casa-bodega
+        - apartment
+        - lote
+        - rancho
+      sortby: date-desc
+    output_filename: data.csv
+    internal_filename: internal_data.csv
+
+formats:
+  - CSV
+  - Excel
+  - Google Sheets
