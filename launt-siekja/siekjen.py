@@ -1,3 +1,4 @@
+#!/Users/david/opt/anaconda3/bin/python
 from commands import start
 
 def main():
