@@ -8,7 +8,8 @@ git clone https://github.com/dtremp007/launt-siekja
 ```
 Run setup:
 ```
-zsh setup.sh
+cd launt-siekja
+./setup.sh
 ```
 Run program from anywhere:
 ```
