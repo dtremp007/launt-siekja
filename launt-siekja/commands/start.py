@@ -1,5 +1,4 @@
 import inquirer
-from settings import Config
 import yaml
 from scrapers import WebScraperT1, WebScraperBase
 
