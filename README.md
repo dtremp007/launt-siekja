@@ -4,7 +4,7 @@ A webscraper for finding properties in the Cuauhtemoc area.
 ## Install
 Using git:
 ```
-get clone https://github.com/dtremp007/launt-siekja
+git clone https://github.com/dtremp007/launt-siekja
 ```
 Run setup:
 ```
