@@ -1,8 +1,7 @@
 class WebScraperBase:
-    def __init__(self, url, format, output_filename, internal_filename):
+    def __init__(self, url, formatter, internal_filename):
         self.url = url
-        self.format = format
-        self.output_filename = output_filename
+        self.formatter = formatter
         self.internal_filename = internal_filename
 
     def run(self):
@@ -10,3 +9,6 @@ class WebScraperBase:
 
     def configure(self, website_config):
         pass    # To be implemented by subclasses
+
+    def export(self):
+        self.formatter.export()

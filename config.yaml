@@ -14,8 +14,7 @@ websites:
         - lote
         - rancho
       sortby: date-desc
-    output_filename: data.csv
-    internal_filename: internal_data.csv
+    output_filename: ~/Downloads/data.csv
 
 formats:
   - CSV

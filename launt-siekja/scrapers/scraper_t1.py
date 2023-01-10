@@ -11,18 +11,25 @@ import json
 from progress.bar import Bar
 import math
 import inquirer
+import datetime
+from formatters import FormatterBase
+import utils
 
 class WebScraperT1(WebScraperBase):
-    def __init__(self, website_config, format):
+    def __init__(self, website_config, formatter: FormatterBase):
+        date_string = datetime.datetime.now().strftime("%Y-%m-%d")
+        internal_filename = utils.resolve_path("thiessen_data", f"thiessen_{date_string}.csv")
+
+        formatter.set_source(internal_filename)
+        formatter.set_output(os.path.expanduser(website_config["output_filename"]))
+
         super().__init__(
             url=website_config["url"],
-            format=format,
-            output_filename=website_config["output_filename"],
-            internal_filename=website_config["internal_filename"],
+            formatter=formatter,
+            internal_filename=internal_filename,
         )
-        self.configure(website_config)
 
-    def find_properties(self, session, listing_type, data_queue, properties_total, number_results_reported):
+    def find_properties(self, session, listing_type, data_queue, properties_total, number_results_reported, properties_written):
         page = 1
         number_results = 1
         links_found = 0
@@ -57,6 +64,7 @@ class WebScraperT1(WebScraperBase):
                 thumbnail = property["thumb"]
 
                 data_queue.put({"property": [title, price, lat, lng, url, thumbnail, listing_type]})
+                properties_written.value += 1
 
             page += 1
         data_queue.put(None)
@@ -68,20 +76,24 @@ class WebScraperT1(WebScraperBase):
         data_queue = Queue()
         properties_total = Value('i', 0)
         number_results_reported = Value('i', 0)
+        properties_written = Value('i', 0)
         processes = []
         for listing_type in self.queries["listing_type"]:
             with requests.Session() as session:
                 p = Process(target=self.find_properties, args=(
-                    session, listing_type, data_queue, properties_total, number_results_reported))
+                    session, listing_type, data_queue, properties_total, number_results_reported, properties_written))
                 p.start()
                 processes.append(p)
 
         number_of_processes_completed = 0
-        properties_written = 0
         awaiting_reports_progress = Bar('Indexing pages', max=len(processes))
         scraper_progress = None
 
         awaiting_reports_progress.goto(number_results_reported.value)
+
+        # Create the directory if it doesn't exist
+        if not os.path.exists(os.path.dirname(self.internal_filename)):
+            os.makedirs(os.path.dirname(self.internal_filename))
 
         # Open the file for writing
         with open(self.internal_filename, 'w') as csvfile:
@@ -102,7 +114,7 @@ class WebScraperT1(WebScraperBase):
                 if number_results_reported.value == len(processes):
                     awaiting_reports_progress.finish()
                     scraper_progress = Bar('Scraping', max=properties_total.value)
-                    scraper_progress.goto(properties_written)
+                    scraper_progress.goto(properties_written.value)
                     number_results_reported.value += 1
 
 
@@ -113,11 +125,9 @@ class WebScraperT1(WebScraperBase):
                     continue
                 elif "property" in data:
                     writer.writerow(data["property"])
-                    properties_written += 1
                     if scraper_progress is not None:
-                        scraper_progress.goto(properties_written)
+                        scraper_progress.goto(properties_written.value)
 
-        print("Number of properties written:", properties_written)
         for p in processes:
             p.join()
 

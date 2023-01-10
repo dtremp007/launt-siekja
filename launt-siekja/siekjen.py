@@ -4,11 +4,13 @@ import os
 import sys
 import utils
 
+
 def main():
     try:
         run_update()
         scraper = start(utils.resolve_path("config.yaml"))
         scraper.run()
+        scraper.export()
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
 
