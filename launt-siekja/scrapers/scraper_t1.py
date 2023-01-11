@@ -5,7 +5,7 @@ import csv
 from bs4 import BeautifulSoup
 import time
 from request_internal import get_html
-from multiprocessing import Pool, Queue, cpu_count, Pipe, Process, Value
+from multiprocessing import Pool, Queue, cpu_count, Pipe, Process, Value, Manager
 import os
 import json
 from progress.bar import Bar
@@ -15,78 +15,80 @@ import datetime
 from formatters import FormatterBase
 import utils
 
+
 class WebScraperT1(WebScraperBase):
+    def __init__(self):
+        super().__init__("thiessen")
+
     def configure(self, website_config, interface, formatter: FormatterBase):
-        self.format_internal_filename("thiessen")
-
-        formatter.configure(
-                interface,
-                source_filename=self.internal_filename,
-                seed="thiessen"
-            )
-
         self.url = website_config["url"]
         self.queries = website_config["queries"]
         self.search_path = website_config["search_path"]
         self.formatter = formatter
+        self.results = None
 
         return self
 
-    def find_properties(self, session, listing_type, data_queue, properties_total, number_results_reported, properties_written):
-        page = 1
-        number_results = 1
-        links_found = 0
+    def search_by_category(self, session, listing_type):
+        page_number = 1
+        max_pages = 1
 
-        queries = {key: value for key, value in self.queries.items()
-                   if isinstance(value, (str, int, float))}
-        queries["type[]"] = listing_type
+        query_string = self.parse_queries(listing_type)
 
-        while links_found < number_results:
-            # Combine the URL, search path, and query to form the full URL
-            url = f"{self.url}{replace_page_number(self.search_path, page)}?{urlencode(queries)}"
+        while links_found < max_pages:
+            self.scrape_search_results(page_number)
 
-            html = get_html(session, url)
-            soup = BeautifulSoup(html, 'html.parser')
-
-            if page == 1:
-                number = soup.find(
-                    'h2', class_='rh_page__title').span.text
-                number_results = int(number)
-                properties_total.value += number_results
-                number_results_reported.value += 1
-
-            properties_array = extract_map_data(soup)
-            for property in properties_array:
-                links_found += 1
-
-                title = property["title"]
-                price = property["price"]
-                lat = property["lat"]
-                lng = property["lng"]
-                url = property["url"]
-                thumbnail = property["thumb"]
-
-                data_queue.put({"property": [title, price, lat, lng, url, thumbnail, listing_type]})
-                properties_written.value += 1
-
-            page += 1
         data_queue.put(None)
+
+    def parse_queries(self, listing_type):
+        queries = {key: value for key, value in self.queries.items()
+                        if isinstance(value, (str, int, float))}
+        queries["type[]"] = listing_type
+        return urlencode(queries)
+
+    def scrape_search_results(self, page_number, query_string, listing_type):
+        # Combine the URL, search path, and query to form the full URL
+        url = f"{self.url}{replace_page_number(self.search_path, page_number)}?{query_string}"
+
+        html = get_html(session, url)
+        soup = BeautifulSoup(html, 'html.parser')
+        properties_array = extract_map_data(soup)
+
+        for property in properties_array:
+            title = property["title"]
+            price = property["price"]
+            lat = property["lat"]
+            lng = property["lng"]
+            url = property["url"]
+            thumbnail = property["thumb"]
+
+            data = [title, price, lat, lng, url, thumbnail, listing_type]
+            self.add_result(title, data)
+
+
+    def extract_search_results_number(self, soup):
+        number = soup.find(
+            'h2', class_='rh_page__title').span.text
+        number_results = int(number)
+        properties_total.value += number_results
+        return number_results
 
     def run(self):
         self.run_scraper()
+        return self
 
     def run_scraper(self):
-        data_queue = Queue()
         properties_total = Value('i', 0)
-        number_results_reported = Value('i', 0)
         properties_written = Value('i', 0)
         processes = []
-        for listing_type in self.queries["listing_type"]:
-            with requests.Session() as session:
-                p = Process(target=self.find_properties, args=(
-                    session, listing_type, data_queue, properties_total, number_results_reported, properties_written))
-                p.start()
-                processes.append(p)
+        with Manager() as manager:
+            for listing_type in self.queries["listing_type"]:
+                self.results = manager.dict()
+                with requests.Session() as session:
+                    p = Process(target=self.search_by_category, args=(
+                        session, listing_type, data_queue, properties_total, number_results_reported, properties_written))
+                    p.start()
+                    processes.append(p)
 
         number_of_processes_completed = 0
         awaiting_reports_progress = Bar('Indexing pages', max=len(processes))
@@ -94,46 +96,20 @@ class WebScraperT1(WebScraperBase):
 
         awaiting_reports_progress.goto(number_results_reported.value)
 
-        # Create the directory if it doesn't exist
-        if not os.path.exists(os.path.dirname(self.internal_filename)):
-            os.makedirs(os.path.dirname(self.internal_filename))
-
         # Open the file for writing
         with open(self.internal_filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
             # Add a row to the file
-            writer.writerow(['title', 'price', 'lat', 'lng', 'url', 'thumbnail', 'listing_type'])
+            writer.writerow(['title', 'price', 'lat', 'lng',
+                            'url', 'thumbnail', 'listing_type'])
 
-            # Continuously check if there are any items in the queue
-            while number_of_processes_completed < len(processes):
-                # If there are no items in the queue, wait for 0.1 seconds before checking again
-                if data_queue.empty():
-                    time.sleep(0.5)
-                    continue
-
-                if number_results_reported.value < len(processes):
-                    awaiting_reports_progress.goto(number_results_reported.value)
-
-                if number_results_reported.value == len(processes):
-                    awaiting_reports_progress.finish()
-                    scraper_progress = Bar('Scraping', max=properties_total.value)
-                    scraper_progress.goto(properties_written.value)
-                    number_results_reported.value += 1
-
-
-                # Get an item from the queue
-                data = data_queue.get()
-                if data is None:
-                    number_of_processes_completed += 1
-                    continue
-                elif "property" in data:
-                    writer.writerow(data["property"])
-                    if scraper_progress is not None:
-                        scraper_progress.goto(properties_written.value)
 
         for p in processes:
             p.join()
 
+    def add_result(self, id, data):
+        if self.results and id not in self.results:
+            self.results[id] = data
 
 
 def replace_page_number(url, page_number):
@@ -146,6 +122,7 @@ def extract_map_data(soup):
     script = soup.find("script", {"id": "properties-open-street-map-js-extra"})
 
     # Extract the "var propertyMapData" from the script
-    property_map_data_string = script.text.split( "var propertiesMapData = ")[1].split(";\n")[0]
+    property_map_data_string = script.text.split(
+        "var propertiesMapData = ")[1].split(";\n")[0]
 
     return json.loads(property_map_data_string)

@@ -16,12 +16,25 @@ def start(config_file, interface) -> WebScraperBase:
         scraper = WEB_SCRAPERS[website]()
         formatter = FORMATTERS[format]()
 
+        scraper.setup_internal_file()
+
+        formatter\
+            .configure(
+                interface,
+                source_filename=scraper.internal_filename,
+                seed=scraper.seed
+            )
+
         scraper\
             .configure(
                 website_config,
                 interface,
                 formatter
-            )\
+            )
+
+        interface\
+            .execute()
+        scraper\
             .run()\
             .export()
 
@@ -42,4 +55,5 @@ def start(config_file, interface) -> WebScraperBase:
             formatter_choices,
             formatter_choices[0]
         )\
-        .execute(setup_and_run_scraper)
+        .queue_handler(setup_and_run_scraper)\
+        .execute()

@@ -7,13 +7,17 @@ from interface import CLInterface
 
 def main():
     config_file = utils.resolve_path("config.yaml")
-    interface = CLInterface()
+    user_settings_file = utils.resolve_path("user_settings.yaml")
+
+    interface = CLInterface(user_settings_file)
 
     try:
         run_update()
         start(config_file, interface)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
+    finally:
+        interface.close()
 
 if __name__ == "__main__":
     main()

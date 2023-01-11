@@ -11,5 +11,8 @@ class Interface:
     def checklist(self, name, message, choices, default):
         raise NotImplementedError
 
-    def execute(self, handle_input):
+    def queue_handler(self, handle_input):
+        raise NotImplementedError
+
+    def execute(self):
         raise NotImplementedError

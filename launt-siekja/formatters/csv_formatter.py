@@ -5,25 +5,22 @@ import shutil
 import utils
 import yaml
 
+OUTPUT_DIR = "~/Documents/launt-siekja"
+
 class CSVFormatter(FormatterBase):
     def configure(self, interface, source_filename, seed):
-        user_settings = {}
-        user_settings_filename = utils.resolve_path("user_settings.yaml")
-        try:
-            with open(user_settings_filename) as f:
-                user_settings = yaml.safe_load(f)
-        except FileNotFoundError:
-            pass
+        def assign_variables(user_settings):
+            self.source_filename = source_filename
+            self.output_filename = os.path.join(user_settings["output_directory"], f"{seed}.csv")
 
-        if "output_directory" not in user_settings:
-            user_settings["output_directory"] = os.path.expanduser("~/Documents/launt-siekja")
-
-        self.source_filename = source_filename
-        self.output_filename = utils.resolve_path(user_settings["output_directory"], f"{seed}.csv")
-
-        with open(user_settings_filename, "w") as f:
-            yaml.dump(user_settings, f)
-
+        interface\
+            .path(
+                "output_directory",
+                "Where do you want to store the data?",
+                os.path.expanduser(OUTPUT_DIR),
+                True
+            )\
+            .queue_handler(assign_variables)
 
     def export(self):
         self.look_for_new_data()
