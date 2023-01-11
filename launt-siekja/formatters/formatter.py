@@ -2,18 +2,16 @@ import os
 import csv
 import pandas as pd
 from csv_diff import load_csv, compare
+from interface import Interface
 
 class FormatterBase:
     def __init__(self):
         self.source_filename = None
-        self.new_data = []
         self.previous_filename = None
+        self.new_data = []
 
-    def set_source(self, source_filename):
-        self.source_filename = source_filename
-
-    def set_output(self, output_filename):
-        self.output_filename = output_filename
+    def configure(self, interface, source_filename, seed) -> Interface:
+        raise NotImplementedError
 
     def look_for_new_data(self):
         self.sort()
@@ -37,7 +35,4 @@ class FormatterBase:
 
 
     def export(self):
-        raise NotImplementedError
-
-    def configure(self):
         raise NotImplementedError

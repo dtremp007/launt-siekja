@@ -1,31 +1,45 @@
 import inquirer
 import yaml
-from scrapers import WebScraperT1, WebScraperBase
-from formatters import CSVFormatter
+from scrapers import WEB_SCRAPERS, WebScraperBase
+from formatters import FORMATTERS
 
 
-def start(config_file) -> WebScraperBase:
-    web_scrapers = {
-        "thiessen.com.mx": WebScraperT1,
-    }
-    formatters = {
-        "CSV": CSVFormatter,
-    }
-
+def start(config_file, interface) -> WebScraperBase:
     with open(config_file) as f:
         config = yaml.safe_load(f)
 
-    website_choices = [key for key in config["websites"].keys()]
+    def setup_and_run_scraper(answers):
+        website = answers["website"]
+        format = answers["format"]
+        website_config = config["websites"][website]
 
-    website = inquirer.list_input(
-        message="Which website do you want to scrape?", choices=website_choices)
-    format = inquirer.list_input(
-        message="What format do want the data in?", choices=formatters.keys())
+        scraper = WEB_SCRAPERS[website]()
+        formatter = FORMATTERS[format]()
 
-    website_config = config["websites"][website]
+        scraper\
+            .configure(
+                website_config,
+                interface,
+                formatter
+            )\
+            .run()\
+            .export()
 
-    formatter = formatters[format]()
-    scraper = web_scrapers[website](website_config, formatter)
-    scraper.configure(website_config)
 
-    return scraper
+    website_choices = [key for key in WEB_SCRAPERS.keys()]
+    formatter_choices = [key for key in FORMATTERS.keys()]
+
+    interface\
+        .select(
+            "website",
+            "Which website do you want to scrape?",
+            website_choices,
+            website_choices[0]
+        )\
+        .select(
+            "format",
+            "How do you want to export the data?",
+            formatter_choices,
+            formatter_choices[0]
+        )\
+        .execute(setup_and_run_scraper)

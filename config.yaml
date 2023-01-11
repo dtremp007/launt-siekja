@@ -14,9 +14,3 @@ websites:
         - lote
         - rancho
       sortby: date-desc
-    output_filename: ~/Downloads/data.csv
-
-formats:
-  - CSV
-  - Excel
-  - Google Sheets

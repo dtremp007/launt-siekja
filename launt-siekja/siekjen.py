@@ -3,14 +3,15 @@ from commands import start, run_update
 import os
 import sys
 import utils
-
+from interface import CLInterface
 
 def main():
+    config_file = utils.resolve_path("config.yaml")
+    interface = CLInterface()
+
     try:
         run_update()
-        scraper = start(utils.resolve_path("config.yaml"))
-        scraper.run()
-        scraper.export()
+        start(config_file, interface)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
 

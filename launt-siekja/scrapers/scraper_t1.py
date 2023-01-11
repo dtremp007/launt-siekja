@@ -16,18 +16,21 @@ from formatters import FormatterBase
 import utils
 
 class WebScraperT1(WebScraperBase):
-    def __init__(self, website_config, formatter: FormatterBase):
-        date_string = datetime.datetime.now().strftime("%Y-%m-%d")
-        internal_filename = utils.resolve_path("thiessen_data", f"thiessen_{date_string}.csv")
+    def configure(self, website_config, interface, formatter: FormatterBase):
+        self.format_internal_filename("thiessen")
 
-        formatter.set_source(internal_filename)
-        formatter.set_output(os.path.expanduser(website_config["output_filename"]))
+        formatter.configure(
+                interface,
+                source_filename=self.internal_filename,
+                seed="thiessen"
+            )
 
-        super().__init__(
-            url=website_config["url"],
-            formatter=formatter,
-            internal_filename=internal_filename,
-        )
+        self.url = website_config["url"]
+        self.queries = website_config["queries"]
+        self.search_path = website_config["search_path"]
+        self.formatter = formatter
+
+        return self
 
     def find_properties(self, session, listing_type, data_queue, properties_total, number_results_reported, properties_written):
         page = 1
@@ -131,12 +134,7 @@ class WebScraperT1(WebScraperBase):
         for p in processes:
             p.join()
 
-    def configure(self, website_config):
-        website_config["queries"]["listing_type"] = inquirer.prompt([inquirer.Checkbox(name="categories", message="Which categories do you want to scrape?",
-            choices=website_config["queries"]["listing_type"], default=website_config["queries"]["listing_type"] )])["categories"]
 
-        self.queries = website_config["queries"]
-        self.search_path = website_config["search_path"]
 
 def replace_page_number(url, page_number):
     # Replace the page number with the page number in the URL
