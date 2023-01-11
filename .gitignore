@@ -1,6 +1,7 @@
 *.csv
 credentials.json
 token.json
+user_settings.yaml
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
