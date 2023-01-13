@@ -2,6 +2,7 @@ websites:
   thiessen.com.mx:
     url: https://thiessen.com.mx
     search_path: /properties-search/page/PAGE_NUMBER/
+    results_per_page: 6
     queries:
       listing_type:
         - bodega

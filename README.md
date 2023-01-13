@@ -1,3 +1,5 @@
+<img src="launt-siekja-logo.png" width="200" height="200" />
+
 # launt-siekja
 A webscraper for finding properties in the Cuauhtemoc area.
 

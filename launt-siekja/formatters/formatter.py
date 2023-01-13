@@ -31,7 +31,20 @@ class FormatterBase:
             os.remove(self.previous_filename)
 
     def sort(self):
-        pd.read_csv(self.source_filename).sort_values(by=["title"]).to_csv(self.source_filename, index=False)
+        pd\
+            .read_csv(self.source_filename)\
+            .sort_values(by=["title"])\
+            .groupby("title", as_index=False)\
+            .agg({
+                "price": "first",
+                "lat": "first",
+                "lng": "first",
+                "url": "first",
+                "thumbnail": "first",
+                "listing_type": lambda x: ", ".join(x)
+            })\
+            .fillna("")\
+            .to_csv(self.source_filename, index=False)
 
 
     def export(self):

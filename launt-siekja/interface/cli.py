@@ -13,7 +13,7 @@ class CLInterface(Interface):
 
         self.questions = []
         self.cache = user_settings
-        self.answers_to_save = []
+        self.do_not_save = []
         self.handlers = []
         self.user_setting_file = user_settings_file
 
@@ -24,8 +24,8 @@ class CLInterface(Interface):
             method()
 
     def confirm(self, name, message, default: bool, save_answer=False):
-        if save_answer:
-            self.answers_to_save.append(name)
+        if not save_answer:
+            self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.Confirm(name, message=message, default=default))
@@ -33,7 +33,7 @@ class CLInterface(Interface):
         return self
 
     def get_input(self, name, message, default, save_answer=False):
-        self.answers_to_save.append(name)
+        self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.Text(name, message=message, default=default))
@@ -41,8 +41,8 @@ class CLInterface(Interface):
         return self
 
     def select(self, name, message, choices, default, save_answer=False):
-        if save_answer:
-            self.answers_to_save.append(name)
+        if not save_answer:
+            self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.List(name, message=message, choices=choices, default=default))
@@ -50,8 +50,8 @@ class CLInterface(Interface):
         return self
 
     def checklist(self, name, message, choices, default, save_answer=False):
-        if save_answer:
-            self.answers_to_save.append(name)
+        if not save_answer:
+            self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.Checkbox(name, message=message, choices=choices, default=default))
@@ -59,8 +59,8 @@ class CLInterface(Interface):
         return self
 
     def path(self, name, message, default, save_answer=False):
-        if save_answer:
-            self.answers_to_save.append(name)
+        if not save_answer:
+            self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.Path(name, message=message, default=default, normalize_to_absolute_path=True))
@@ -79,10 +79,14 @@ class CLInterface(Interface):
             handle_input = self.handlers.pop()
             handle_input(self.cache)
 
+    def add_value(self, key, value):
+        self.cache[key] = value
+
+    def get_value(self, key):
+        return self.cache[key]
+
     def close(self):
-        user_settings = {}
-        for answer in self.answers_to_save:
-            user_settings[answer] = self.cache[answer]
+        user_settings = {k:v for k, v in self.cache.items() if k not in self.do_not_save}
 
         with open(self.user_setting_file, "w") as f:
             f.write(yaml.dump(user_settings))
