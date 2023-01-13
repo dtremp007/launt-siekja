@@ -2,6 +2,7 @@ from .interface import Interface
 import inquirer
 import yaml
 import os
+import argparse
 
 class CLInterface(Interface):
     def __init__(self, user_settings_file):
@@ -84,6 +85,23 @@ class CLInterface(Interface):
 
     def get_value(self, key):
         return self.cache[key]
+
+    def parse_args(self):
+            parser = argparse.ArgumentParser(
+                            prog = 'launt-siekja',
+                            description = 'Scrape websites and export data',
+            )
+            parser.add_argument("-w", "--website", help="The website to scrape.")
+            parser.add_argument("-f", "--format", help="The format to export the data in.")
+            parser.add_argument("-o", "--output_directory", help="The output file to export the data to.")
+            parser.add_argument("-g", "--google_sheets_id", help="Google Sheet ID you want to export to.")
+            parser.add_argument("-r", "--sheet_name", help="Specify range you want to export to.")
+            args = parser.parse_args()
+            for arg in vars(args):
+                value = getattr(args, arg)
+                if value is not None:
+                    self.add_value(arg, value)
+            return self
 
     def close(self):
         user_settings = {k:v for k, v in self.cache.items() if k not in self.do_not_save}

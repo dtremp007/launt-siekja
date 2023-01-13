@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import inquirer
 import pandas as pd
+from .google_sheets_api import *
 
 
 class GoogleSheetsFormatter(FormatterBase):
@@ -13,7 +14,7 @@ class GoogleSheetsFormatter(FormatterBase):
             self.source_filename = source_filename
             self.credentials = run_oauth_flow()
             self.sheet_id = user_settings["google_sheets_id"]
-            self.sheet_range = user_settings["sheet_range"]
+            self.sheet_name = user_settings["sheet_name"]
 
         interface\
             .get_input(
@@ -23,8 +24,8 @@ class GoogleSheetsFormatter(FormatterBase):
                 True
             )\
             .get_input(
-                "sheet_range",
-                "Enter the range of the sheet you want to export to",
+                "sheet_name",
+                "Enter the name of the sheet you want to export to",
                 "A1",
                 True
             )\
@@ -32,26 +33,20 @@ class GoogleSheetsFormatter(FormatterBase):
 
     def export(self):
         self.look_for_new_data()
-        export_data = self.new_data_two_dimensional_array()
+        export_data = self.new_data
 
         if len(export_data) == 0:
             should_continue = inquirer.confirm("No new data found. Do you want to export all data?", default=False)
             if should_continue == False:
                 return
-            export_data = pd.read_csv(self.source_filename).fillna("").values.tolist()
+            self.new_data = pd.read_csv(self.source_filename).fillna("").values.tolist()
 
         try:
-            service = build('sheets', 'v4', credentials=self.credentials)
-            sheet = service.spreadsheets()
-            result = sheet.values().append(
-                spreadsheetId=self.sheet_id,
-                range=self.sheet_range,
-                valueInputOption="USER_ENTERED",
-                body=dict(
-                    majorDimension="ROWS",
-                    values=export_data
-                )
-            ).execute()
+            # todolist:
+            # - get header row from sheet
+            # - format data to fit header row
+            # - export data to sheet
+            pass
         except HttpError as e:
             print(e)
 

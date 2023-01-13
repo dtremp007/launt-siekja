@@ -24,10 +24,14 @@ class FormatterBase:
                     break
 
         if self.previous_filename is not None:
-            self.new_data = compare(
+            added_data = compare(
                 load_csv(open(self.previous_filename), key="title"),
                 load_csv(open(self.source_filename), key="title")
             )["added"]
+            if len(added_data) > 0:
+                self.new_data = [[row[key] for key in row] for row in self.new_data]
+            else:
+                self.new_data = []
             os.remove(self.previous_filename)
 
     def sort(self):

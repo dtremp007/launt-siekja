@@ -33,7 +33,7 @@ class CSVFormatter(FormatterBase):
 
         if os.path.exists(self.output_filename) and len(self.new_data) > 0:
             with open(self.output_filename, "a") as f:
-                writer = csv.DictWriter(f, fieldnames=self.new_data[0].keys())
+                writer = csv.writer(f)
 
                 for row in self.new_data:
                     writer.writerow(row)

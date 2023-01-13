@@ -43,6 +43,7 @@ def start(config_file, interface) -> WebScraperBase:
     formatter_choices = [key for key in FORMATTERS.keys()]
 
     interface\
+        .parse_args()\
         .select(
             "website",
             "Which website do you want to scrape?",

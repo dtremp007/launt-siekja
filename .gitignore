@@ -2,6 +2,10 @@
 credentials.json
 token.json
 user_settings.yaml
+*.ipynb
+data/
+
+.DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
