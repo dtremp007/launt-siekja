@@ -35,7 +35,7 @@ class CSVFormatter(FormatterBase):
             with open(self.output_filename, "a") as f:
                 writer = csv.writer(f)
 
-                for row in self.new_data:
+                for row in self.new_data.values.tolist():
                     writer.writerow(row)
 
         print(f"\nFile has been saved to {self.output_filename}")

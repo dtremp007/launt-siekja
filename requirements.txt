@@ -8,3 +8,5 @@ progress==1.6
 protobuf==4.21.12
 PyYAML==6.0
 requests==2.26.0
+thefuzz==0.19.0
+python-Levenshtein==0.12.2

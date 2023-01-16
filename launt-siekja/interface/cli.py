@@ -34,7 +34,8 @@ class CLInterface(Interface):
         return self
 
     def get_input(self, name, message, default, save_answer=False):
-        self.do_not_save.append(name)
+        if not save_answer:
+            self.do_not_save.append(name)
         self.cache_answer(
             name,
             lambda: self.questions.append(inquirer.Text(name, message=message, default=default))

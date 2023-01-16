@@ -36,6 +36,7 @@ def run_update():
     # Update the local repository
     subprocess.run(['git', 'pull', '--ff-only', 'origin',
                    'main'], check=True, cwd=utils.get_root_dir())
-    print("You are up to date. You can now run 'siekjen' again.")
+    subprocess.run(["python", "-c", "requirements.txt"], cwd=utils.get_root_dir())
+    print("You are up to date. You can now run 'siekjen.py' again.")
     # Exit the program
     sys.exit(0)

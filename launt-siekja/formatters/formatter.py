@@ -25,11 +25,11 @@ class FormatterBase:
 
         if self.previous_filename is not None:
             added_data = compare(
-                load_csv(open(self.previous_filename), key="title"),
-                load_csv(open(self.source_filename), key="title")
+                load_csv(open(self.previous_filename), key="id"),
+                load_csv(open(self.source_filename), key="id")
             )["added"]
             if len(added_data) > 0:
-                self.new_data = [[row[key] for key in row] for row in self.new_data]
+                self.new_data = pd.DataFrame(added_data)
             else:
                 self.new_data = []
             os.remove(self.previous_filename)
@@ -38,14 +38,16 @@ class FormatterBase:
         pd\
             .read_csv(self.source_filename)\
             .sort_values(by=["title"])\
-            .groupby("title", as_index=False)\
+            .groupby("id", as_index=False)\
             .agg({
+                "title": "first",
                 "price": "first",
                 "lat": "first",
                 "lng": "first",
                 "url": "first",
                 "thumbnail": "first",
-                "listing_type": lambda x: ", ".join(x)
+                "listing_type": lambda x: ", ".join(x),
+                "date_scraped": "first"
             })\
             .fillna("")\
             .to_csv(self.source_filename, index=False)

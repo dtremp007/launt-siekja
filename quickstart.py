@@ -1,17 +1,10 @@
-import argparse
+class MyClass:
+    is_true = True
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-                    prog = 'launt-siekja',
-                    description = 'Scrape websites and export data',
-    )
-    parser.add_argument("-w", "--website", help="The website to scrape.")
-    parser.add_argument("-f", "--format", default="Google Sheets", help="The format to export the data in. Default: Google Sheets")
-    args = parser.parse_args()
-    for arg in vars(args):
-        # interface.add_value(arg, getattr(args, arg))
-        print(getattr(args, arg))
-    return args.website
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
-
-parse_args()
+foo = MyClass(version="1.0", is_true=False)
+print(foo.version)
+print(foo.is_true)
+print(MyClass.is_true)

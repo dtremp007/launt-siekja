@@ -86,7 +86,7 @@ class WebScraperT1(WebScraperBase):
         return number_results
 
     def create_id_from_url(self, url):
-        return url.split("/")[-1]
+        return url.split("/")[-2]
 
     def run(self):
         if not os.path.exists(self.internal_filename):
@@ -97,7 +97,6 @@ class WebScraperT1(WebScraperBase):
         processes = []
         queue = Queue()
         queues_reported = 0
-        self.create_csv()
         for listing_type in self.queries["listing_type"]:
             with requests.Session() as session:
                 p = Process(target=self.search_by_category, args=(session, listing_type, queue))
@@ -109,8 +108,8 @@ class WebScraperT1(WebScraperBase):
         with open(self.internal_filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
             # Add a row to the file
-            writer.writerow(['title', 'price', 'lat', 'lng',
-                            'url', 'thumbnail', 'listing_type'])
+            writer.writerow(['id', 'title', 'price', 'lat', 'lng',
+                            'url', 'thumbnail', 'listing_type', 'date_scraped'])
 
             while queues_reported < len(processes):
                 data = queue.get()
